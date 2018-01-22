@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 import getopt, sys
 import pickle
-from mtranslate import translate
+
 
 def prepare_data(col_name, inputfile):
     # Read in data from CSV into a dataframe
@@ -18,11 +18,6 @@ def prepare_data(col_name, inputfile):
     df = df[pandas.notnull(df['Answer'])]
     df = df[pandas.notnull(df[col_name])]
     df[col_name] = df[col_name].apply(lambda x: x.title())
-    # Translate
-    print('Translating, this might take a while...')
-    df['Answer'] = df['Answer'].apply(lambda x: translate(x, 'en'))
-
-    df.to_csv('cleantranslated.csv', sep='|', encoding='latin-1')
 
     # Applying bag of words
     count_vect = CountVectorizer()
@@ -71,8 +66,8 @@ def gridsearch(name, x_train, x_test, y_train, y_test):
 
     # svm.LinearSVC()
     parametersLinSVC = [
-        {'C': [1, 10, 100], 'loss': ['hinge', 'squared_hinge'], 'penalty': ['l2'], 'dual': [True]},
-        {'C': [1, 10, 100], 'loss': ['squared_hinge'], 'penalty': ['l1', 'l2'], 'dual': [False]}
+        {'C': [1, 10, 100], 'loss': ['hinge', 'squared_hinge'], 'penalty': ['l2'], 'dual': [True], 'tol': [1e-4, 1e-3, 1e-2], 'multi_class': ['crammer_singer', 'ovr']},
+        {'C': [1, 10, 100], 'loss': ['squared_hinge'], 'penalty': ['l1', 'l2'], 'dual': [False], 'tol': [1e-4, 1e-3, 1e-2], 'multi_class': ['crammer_singer', 'ovr']}
     ]
 
     # This is how we would create a model with certain parameters once we've figured out the best one with gridsearch
@@ -84,47 +79,21 @@ def gridsearch(name, x_train, x_test, y_train, y_test):
 
     # Start gridsearch. Gridsearch will try every model, with every possible combination of given hyperparameters
     # and evaluate each combination. Gridsearch uses cross validation for evaluation
-    print("Fitting SVC")
-    grid.fit(x_train, y_train)
-    predicted = grid.predict(x_test)
+    # print("Fitting SVC")
+    # grid.fit(x_train, y_train)
+    # predicted = grid.predict(x_test)
     print("Fitting LinearSVC")
     grid1.fit(x_train, y_train)
     predicted1 = grid1.predict(x_test)
 
     print("===========================")
     print("Scores for: " + name)
-    print("SVC")
-    print(grid.best_params_)
-    print(np.mean(predicted == y_test))
+    # print("SVC")
+    # print(grid.best_params_)
+    # print(np.mean(predicted == y_test))
     print("LinearSVC")
     print(grid1.best_params_)
     print(np.mean(predicted1 == y_test))
-
-
-def parse_args(argv):
-    message = 'Usage: update.py -i <inputfile>'
-    inputfile = ''
-    try:
-        opts, args = getopt.getopt(argv, "hi:")
-    except getopt.GetoptError:
-        print(message)
-        sys.exit(2)
-
-    for opt, arg in opts:
-        if opt == '-h':
-            print(message)
-            sys.exit()
-        elif opt == '-i':
-            inputfile = arg
-        else:
-            print(message)
-            sys.exit()
-
-    if not inputfile:
-        print(message)
-        sys.exit(2)
-
-    return inputfile
 
 
 def update(inputfile, name, clf):
@@ -159,18 +128,40 @@ def run_gridsearch(inputfile, name):
     gridsearch(name, x_train, x_test, y_train, y_test)
 
 
-def start():
-    #inputfile = parse_args(sys.argv[1:])
+def parse_args(argv):
+    message = 'Usage: update.py -i <inputfile>'
+    inputfile = ''
+    try:
+        opts, args = getopt.getopt(argv, "hi:")
+    except getopt.GetoptError:
+        print(message)
+        sys.exit(2)
 
-    # run_gridsearch('training_data.csv', 'category')
-    # run_gridsearch('training_data.csv', 'functionality')
-    #
-    # clf_category = svm.NuSVC(gamma=1.0, kernel='rbf', nu=0.01)
-    clf_category = svm.LinearSVC(C=1, dual=False, loss='squared_hinge', penalty='l1')
-    update('training_data.csv', 'category', clf_category)
-    # #
-    # clf_functionality = svm.LinearSVC(dual=True, loss='hinge', penalty='l2', C=1)
-    # update('training_data.csv', 'functionality', clf_functionality)
+    for opt, arg in opts:
+        if opt == '-h':
+            print(message)
+            sys.exit()
+        elif opt == '-i':
+            inputfile = arg
+        else:
+            print(message)
+            sys.exit()
+
+    if not inputfile:
+        print(message)
+        sys.exit(2)
+
+    return inputfile
+
+
+def start():
+    inputfile = parse_args(sys.argv[1:])
+
+    clf_category = svm.LinearSVC(C=1, dual=False, loss='squared_hinge', penalty='l1', tol=0.01)
+    update(inputfile, 'category', clf_category)
+
+    clf_functionality = svm.LinearSVC(dual=True, loss='hinge', penalty='l2', C=1)
+    update(inputfile, 'functionality', clf_functionality)
 
 
 if __name__ == "__main__":
