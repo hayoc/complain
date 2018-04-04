@@ -1,5 +1,6 @@
 import numpy as np
 import pandas
+from scipy import sparse
 from sklearn import svm
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics import accuracy_score, average_precision_score, f1_score, confusion_matrix
@@ -25,8 +26,19 @@ def prepare_data(col_name, inputfile):
     counts = count_vect.fit_transform(df['Answer'])
     tfidf = tfidf_transformer.fit_transform(counts)
 
+    touchpoint_encoder = preprocessing.LabelEncoder()
+    touchpoint = touchpoint_encoder.fit_transform(df['Touchpoint'].astype(str))
+    pickle.dump(touchpoint_encoder, open('touchpoint_encoder_' + col_name + '.pickle', 'wb'))
+
+    # visitreason_encoder = preprocessing.LabelEncoder()
+    # visitreason = visitreason_encoder.fit_transform(df['Visit Reason'].astype(str))
+    # pickle.dump(visitreason_encoder, open('visitreason_encoder_' + col_name + '.pickle', 'wb'))
+
+    #data = sparse.hstack((tfidf, sparse.csr_matrix(touchpoint).T, sparse.csr_matrix(visitreason).T))
+    data = sparse.hstack((tfidf, sparse.csr_matrix(touchpoint).T))
+
     # Split data into train-test
-    x_train, x_test, y_train, y_test = train_test_split(tfidf, df[col_name], test_size=0.20, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(data, df[col_name], test_size=0.20, random_state=42)
 
     return x_train, x_test, y_train, y_test
 
@@ -156,7 +168,7 @@ def parse_args(argv):
 
 def start():
     inputfile = parse_args(sys.argv[1:])
-
+    # inputfile = 'training_data.csv'
     clf_category = svm.LinearSVC(C=1, dual=False, loss='squared_hinge', penalty='l1', tol=0.01)
     update(inputfile, 'category', clf_category)
 

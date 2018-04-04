@@ -3,7 +3,6 @@ import getopt
 import sys
 
 
-
 def parse_args(argv):
     firstfile = ''
     secondfile = ''
@@ -35,8 +34,10 @@ def parse_args(argv):
 
     return firstfile, secondfile, outputfile
 
+
 if __name__ == "__main__":
     first, second, output = parse_args(sys.argv[1:])
+    # first, second, output = 'january_training.csv', 'february_training.csv', 'training_data.csv'
 
     first_df = pandas.read_csv(open(first, encoding='latin-1'), delimiter="|")
     second_df = pandas.read_csv(open(second, encoding='latin-1'), delimiter="|")

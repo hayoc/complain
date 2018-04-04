@@ -54,7 +54,6 @@ def start(ifile, ofile):
     orig_df = orig_df[pandas.notnull(orig_df['Answer'])]
     orig_df = orig_df[pandas.notnull(orig_df['Category'])]
 
-    # TODO: bag of words should come from data to predict.. not training data...
     cv = CountVectorizer()
     tfidf_tf = TfidfTransformer()
     init_bow(orig_df['Answer'], cv, tfidf_tf)
@@ -95,7 +94,8 @@ def start(ifile, ofile):
 
 
 if __name__ == "__main__":
-    inputfile, outputfile = parse_args(sys.argv[1:])
+    #inputfile, outputfile = parse_args(sys.argv[1:])
+    inputfile, outputfile = 'topredict.csv', 'february_predicted.csv'
     start(inputfile, outputfile)
 
 
